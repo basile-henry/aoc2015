@@ -18,6 +18,7 @@ pub fn main() anyerror!void {
     defer line.deinit();
 
     var distances = Distances.init(global_allocator);
+    defer distances.deinit();
 
     var arena = std.heap.ArenaAllocator.init(global_allocator);
     defer arena.deinit();
@@ -56,17 +57,24 @@ pub fn main() anyerror!void {
         }
     }
 
-    const shortest = try shortest_path(false, distances, std.StringArrayHashMap(void).init(global_allocator), 0);
+    var so_far = std.StringArrayHashMap(void).init(global_allocator);
+    defer so_far.deinit();
+
+    const shortest = try shortest_path(false, distances, so_far, 0);
 
     print("Part 1: {d}\n", .{shortest});
 
-    const longest = try shortest_path(true, distances, std.StringArrayHashMap(void).init(global_allocator), 0);
+    so_far.clearRetainingCapacity();
+
+    const longest = try shortest_path(true, distances, so_far, 0);
 
     print("Part 2: {d}\n", .{longest});
 }
 
 fn shortest_path(longest: bool, distances: Distances, so_far_const: std.StringArrayHashMap(void), distance_so_far: usize) anyerror!usize {
     var so_far = try so_far_const.clone();
+    defer so_far.deinit();
+
     var keys = distances.keyIterator();
     var best_route: ?usize = null;
     var current_distances: ?*std.StringHashMap(usize) = null;
